@@ -1,0 +1,595 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01//EN" "http://www.w3.org/TR/html4/strict.dtd">
+<!-- saved from url=(0052)http://bradthemad.org/tech/notes/exim_cheatsheet.php -->
+<html><head><meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+<title>Exim Cheatsheet</title>
+<link rel="StyleSheet" href="./Exim Cheatsheet_files/linmiri.css" type="text/css" media="screen">
+<link rel="Shortcut Icon" href="http://bradthemad.org/favicon.ico"> 
+<link rel="Home" href="http://bradthemad.org/">
+<link rel="Copyright" href="http://bradthemad.org/about.php">
+<meta name="robots" content="noarchive">
+<meta name="Author" content="Brad">
+
+<style type="text/css"></style></head>
+
+
+<body style="">
+<div class="block">
+
+<h1>Exim Cheatsheet</h1>
+
+<div class="nav">
+ <a href="http://bradthemad.org/"> Home</a>
+ <a href="http://bradthemad.org/pics/"> Pics</a>
+ <a href="http://bradthemad.org/journal/"> Journal</a>
+ <a href="http://bradthemad.org/personal/"> Personal</a>
+ <a href="http://bradthemad.org/guitar/"> Guitar</a>
+ <a href="http://bradthemad.org/tech/"> Technical</a>
+ <a href="http://bradthemad.org/contact.php"> Contact</a>
+</div><div class="main">
+<!-- end top -->
+
+<p>Here are some useful things to know for managing an Exim 4 server. This
+assumes a prior working knowledge of SMTP, MTAs, and a UNIX shell prompt.</p>
+
+
+<h3>Message-IDs and spool files</h3>
+
+<p>The message-IDs that Exim uses to refer to messages in its queue are
+mixed-case alpha-numeric, and take the form of: XXXXXX-YYYYYY-ZZ. Most
+commands related to managing the queue and logging use these
+message-ids.</p>
+
+<p>There are three -- count 'em, THREE -- files for each message in the
+spool directory. If you're dealing with these files by hand, instead of
+using the appropriate exim commands as detailed below, make sure you get
+them all, and don't leave Exim with remnants of messages in the queue. I
+used to mess directly with these files when I first started running Exim
+machines, but thanks to the utilities described below, I haven't needed to
+do that in many months.</p>
+
+<p>Files in /var/spool/exim/msglog contain logging information for each message
+and are named the same as the message-id.</p>
+
+<p>Files in /var/spool/exim/input are named after the message-id, plus a suffix
+denoting whether it is the envelope header (-H) or message data (-D).
+
+</p><p>These directories may contain further hashed subdirectories to deal with
+larger mail queues, so don't expect everything to always appear directly in the
+top /var/spool/exim/input or /var/spool/exim/msglog directories; any searches
+or greps will need to be recursive. See if there is a proper way to do what
+you're doing before working directly on the spool files.</p>
+
+
+<h3>Basic information</h3>
+
+<p>Print a count of the messages in the queue:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bpc
+</pre>
+
+<p>Print a listing of the messages in the queue (time queued, size, message-id,
+sender, recipient):</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bp
+</pre>
+
+<p>Print a summary of messages in the queue (count, volume, oldest, newest,
+domain, and totals):</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bp | exiqsumm
+</pre>
+
+<p>Print what Exim is doing right now:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiwhat
+</pre>
+
+<p>Test how exim will route a given address:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bt alias@localdomain.com
+user@thishost.com
+    &lt;-- alias@localdomain.com
+  router = localuser, transport = local_delivery
+<b>root@localhost#</b> exim -bt user@thishost.com
+user@thishost.com
+  router = localuser, transport = local_delivery
+<b>root@localhost#</b> exim -bt user@remotehost.com
+  router = lookuphost, transport = remote_smtp
+  host mail.remotehost.com [1.2.3.4] MX=0
+</pre>
+
+<p>Run a pretend SMTP transaction from the command line, as if it were
+coming from the given IP address. This will display Exim's checks, ACLs,
+and filters as they are applied. The message will NOT actually be
+delivered.</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bh 192.168.11.22
+</pre>
+
+<p>Display all of Exim's configuration settings:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -bP
+</pre>
+
+
+
+<h3>Searching the queue with exiqgrep</h3>
+
+<p>Exim includes a utility that is quite nice for grepping through the
+queue, called exiqgrep. 
+<a href="http://www.exim.org/exim-html-4.50/doc/html/spec_49.html#IX2895">
+Learn it. Know it. Live it.</a> If you're not using this, and if you're not
+familiar with the various flags it uses, you're probably doing things the
+hard way, like piping `exim -bp` into awk, grep, cut, or `wc -l`. Don't
+make life harder than it already is.</p>
+
+<p>First, various flags that control what messages are matched. These can
+be combined to come up with a very particular search.</p>
+
+<p>Use -f to search the queue for messages from a specific sender:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -f [luser]@domain
+</pre>
+
+<p>Use -r to search the queue for messages for a specific recipient/domain:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -r [luser]@domain
+</pre>
+
+<p>Use -o to print messages older than the specified number of seconds. For
+example, messages older than 1 day:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -o 86400 [...]
+</pre>
+
+<p>Use -y to print messages that are younger than the specified number of
+seconds. For example, messages less than an hour old:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -y 3600 [...]
+</pre>
+
+<p>Use -s to match the size of a message with a regex. For example, 700-799
+bytes:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -s '^7..$' [...]
+</pre>
+
+<p>Use -z to match only frozen messages, or -x to match only unfrozen
+messages.</p>
+
+
+<p>There are also a few flags that control the display of the output.</p>
+
+<p>Use -i to print just the message-id as a result of one of the above two
+searches:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -i [ -r | -f ] ...
+</pre>
+
+<p>Use -c to print a count of messages matching one of the above
+searches:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -c ...
+</pre>
+
+<p>Print just the message-id of the entire queue:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -i
+</pre>
+
+
+<h3>Managing the queue</h3>
+
+<p>The main exim binary (/usr/sbin/exim) is used with various flags to make
+things happen to messages in the queue. Most of these require one or more
+message-IDs to be specified in the command line, which is where `exiqgrep
+-i` as described above really comes in handy.</p>
+
+<p>Start a queue run:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -q -v
+</pre>
+
+<p>Start a queue run for just local deliveries:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -ql -v
+</pre>
+
+<p>Remove a message from the queue:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mrm &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Freeze a message:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mf &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Thaw a message:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mt &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Deliver a message, whether it's frozen or not, whether the retry time
+has been reached or not:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -M &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Deliver a message, but only if the retry time has been reached:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mc &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Force a message to fail and bounce as "cancelled by administrator":</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mg &lt;message-id&gt; [ &lt;message-id&gt; ... ]
+</pre>
+
+<p>Remove all frozen messages:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -z -i | xargs exim -Mrm
+</pre>
+
+<p>Remove all messages older than five days (86400 * 5 = 432000
+seconds):</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -o 432000 -i | xargs exim -Mrm
+</pre>
+
+<p>Freeze all queued mail from a given sender:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -i -f luser@example.tld | xargs exim -Mf
+</pre>
+
+<p>View a message's headers:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mvh &lt;message-id&gt;
+</pre>
+
+<p>View a message's body:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mvb &lt;message-id&gt;
+</pre>
+
+<p>View a message's logs:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mvl &lt;message-id&gt;
+</pre>
+
+<p>Add a recipient to a message:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mar &lt;message-id&gt; &lt;address&gt; [ &lt;address&gt; ... ]
+</pre>
+
+<p>Edit the sender of a message:</p>
+
+<pre class="shell"><b>root@localhost#</b> exim -Mes &lt;message-id&gt; &lt;address&gt;
+</pre>
+
+
+
+<h3>Access control</h3>
+
+<p>Exim allows you to apply
+<a href="http://www.exim.org/exim-html-4.50/doc/html/spec_39.html">access
+control lists</a>
+at various points of the SMTP transaction by specifying an ACL to use and
+defining its conditions in exim.conf. You could start with the HELO
+string.</p>
+
+<pre class="code"># Specify the ACL to use after HELO
+acl_smtp_helo = check_helo
+
+# Conditions for the check_helo ACL:
+check_helo:
+
+    deny message = Gave HELO/EHLO as "friend"
+    log_message = HELO/EHLO friend
+    condition = ${if eq {$sender_helo_name}{friend} {yes}{no}}
+
+    deny message = Gave HELO/EHLO as our IP address
+    log_message = HELO/EHLO our IP address
+    condition = ${if eq {$sender_helo_name}{$interface_address} {yes}{no}}
+
+    accept
+</pre>
+
+<p>NOTE: Pursue HELO checking at your own peril.  The HELO is fairly
+unimportant in the grand scheme of SMTP these days, so don't put too much
+faith in whatever it contains.  Some spam might seem to use a telltale HELO
+string, but you might be surprised at how many legitimate messages start
+off with a questionable HELO as well.  Anyway, it's just as easy for a
+spammer to send a proper HELO than it is to send HELO im.a.spammer, so
+consider yourself lucky if you're able to stop much spam this way.</p>
+
+<p>Next, you can perform a check on the sender address or remote host.
+This shows how to do that after the RCPT TO command; if you reject here, as
+opposed to rejecting after the MAIL FROM, you'll have better data to
+log, such as who the message was intended for.</p>
+
+<pre class="code"># Specify the ACL to use after RCPT TO
+acl_smtp_rcpt = check_recipient
+
+# Conditions for the check_recipient ACL
+check_recipient:
+
+    # [...]
+
+    drop hosts = /etc/exim_reject_hosts
+    drop senders = /etc/exim_reject_senders
+
+    # [ Probably a whole lot more... ]
+</pre>
+
+<p>This example uses two plain text files as blacklists. Add appropriate
+entries to these files - hostnames/IP addresses to /etc/exim_reject_hosts,
+addresses to /etc/exim_reject_senders, one entry per line.</p>
+
+<p>It is also possible to perform
+<a href="http://www.exim.org/exim-html-4.50/doc/html/spec_40.html">content
+scanning</a> using a regex against the body of a message, though obviously
+this can cause Exim to use more CPU than it otherwise would need to,
+especially on large messages.</p>
+
+<pre class="code"># Specify the ACL to use after DATA
+acl_smtp_data = check_message
+
+# Conditions for the check_messages ACL
+check_message:
+
+    deny message = "Sorry, Charlie: $regex_match_string"
+    regex = ^Subject:: .*Lower your self-esteem by becoming a sysadmin
+
+    accept
+</pre>
+
+
+<h3>Fix SMTP-Auth for Pine</h3>
+
+<p>If pine can't use SMTP authentication on an Exim host and just returns
+an "unable to authenticate" message without even asking for a password, add
+the following line to exim.conf:</p>
+
+<pre class="code">  begin authenticators
+
+  fixed_plain:
+  driver = plaintext
+  public_name = PLAIN
+  server_condition = "${perl{checkuserpass}{$1}{$2}{$3}}"
+  server_set_id = $2
+&gt;<b>  server_prompts = :</b>
+</pre>
+
+<p>This was a problem on CPanel Exim builds awhile ago, but they seem to
+have added this line to their current stock configuration.</p>
+
+
+<h3>Log the subject line</h3>
+
+<p>This is one of the most useful configuration tweaks I've ever found for
+Exim. Add this to exim.conf, and you can log the subject lines of messages
+that pass through your server. This is great for troubleshooting, and for
+getting a very rough idea of what messages may be spam.</p>
+
+<pre class="code">log_selector = +subject
+</pre>
+
+<p><a href="http://www.exim.org/exim-html-4.50/doc/html/spec_48.html#SECT48.15">Reducing
+or increasing what is logged</a>.</p>
+
+
+<h3>Disable identd lookups</h3>
+
+<p>Frankly, I don't think <a href="http://www.ietf.org/rfc/rfc1413.txt">identd</a> has been useful for a
+long time, if ever.  Identd relies on the connecting host to confirm the
+identity (system UID) of the remote user who owns the process that is
+making the network connection.  This may be of some use in the world of
+shell accounts and IRC users, but it really has no place on a high-volume
+SMTP server, where the UID is often simply "mail" or whatever the remote
+MTA runs as, which is useless to know. It's overhead, and results in
+nothing but delays while the identd query is refused or times out. You
+can stop your Exim server from making these queries by setting the timeout
+to zero seconds in exim.conf:</p>
+
+<pre class="code">rfc1413_query_timeout = 0s
+</pre>
+
+
+<h3>Disable Attachment Blocking</h3>
+
+<p>To disable the executable-attachment blocking that many Cpanel servers
+do by default but don't provide any controls for on a per-domain basis, add
+the following block to the beginning of the /etc/antivirus.exim file:</p>
+
+<pre class="code">if $header_to: matches "example\.com|example2\.com"
+then
+  finish
+endif
+</pre>
+
+<p>It is probably possible to use a separate file to list these domains,
+but I haven't had to do this enough times to warrant setting such a thing
+up.</p>
+
+
+<h3>Searching the logs with exigrep</h3>
+
+<p>The <a href="http://www.exim.org/exim-html-4.50/doc/html/spec_49.html#IX2911">exigrep</a>
+utility (not to be confused with exiqgrep) is used to search an exim log
+for a string or pattern. It will print all log entries with the same
+internal message-id as those that matched the pattern, which is very handy
+since any message will take up at least three lines in the log. exigrep
+will search the entire content of a log entry, not just particular
+fields.</p>
+
+<p>One can search for messages sent from a particular IP address:</p>
+
+<pre class="shell"><b>root@localhost#</b> exigrep '&lt;= .* \[12.34.56.78\] ' /path/to/exim_log
+</pre>
+
+<p>Search for messages sent to a particular IP address:</p>
+
+<pre class="shell"><b>root@localhost#</b> exigrep '=&gt; .* \[12.34.56.78\]' /path/to/exim_log
+</pre>
+
+<p>This example searches for outgoing messages, which have the "=&gt;"
+symbol, sent to "user@domain.tld".  The pipe to grep for the "&lt;=" symbol
+will match only the lines with information on the sender - the From
+address, the sender's IP address, the message size, the message ID, and the
+subject line if you have enabled logging the subject. The purpose of doing
+such a search is that the desired information is not on the same log line
+as the string being searched for.</p>
+
+<pre class="shell"><b>root@localhost#</b> exigrep '=&gt; .*user@domain.tld' /path/to/exim_log | fgrep '&lt;='
+</pre>
+
+<p>Generate and display Exim stats from a logfile:</p>
+
+<pre class="shell"><b>root@localhost#</b> eximstats /path/to/exim_mainlog</pre>
+
+<p>Same as above, with less verbose output:</p>
+
+<pre class="shell"><b>root@localhost#</b> eximstats -ne -nr -nt /path/to/exim_mainlog</pre>
+
+<p>Same as above, for one particular day:</p>
+
+<pre class="shell"><b>root@localhost#</b> fgrep YYYY-MM-DD /path/to/exim_mainlog | eximstats</pre>
+
+
+
+<h3>Bonus!</h3>
+
+<p>To delete all queued messages containing a certain string in the
+body:</p>
+
+<pre class="shell"><b>root@localhost#</b> grep -lr 'a certain string' /var/spool/exim/input/ | \
+                sed -e 's/^.*\/\([a-zA-Z0-9-]*\)-[DH]$/\1/g' | xargs exim -Mrm
+</pre>
+
+<p>Note that the above only delves into /var/spool/exim in order to grep
+for queue files with the given string, and that's just because exiqgrep
+doesn't have a feature to grep the actual bodies of messages. If you are
+deleting these files directly, YOU ARE DOING IT WRONG! Use the appropriate
+exim command to properly deal with the queue.</p>
+
+<p>If you have to feed many, many message-ids (such as the output of an
+`exiqgrep -i` command that returns a lot of matches) to an exim command,
+you may exhaust the limit of your shell's command line arguments.  In that
+case, pipe the listing of message-ids into xargs to run only a limited
+number of them at once. For example, to remove thousands of messages sent
+from joe@example.com:</p>
+
+<pre class="shell"><b>root@localhost#</b> exiqgrep -i -f '&lt;joe@example.com&gt;' | xargs exim -Mrm
+</pre>
+
+
+<h3>Speaking of "DOING IT WRONG" -- Attention, CPanel forum readers</h3>
+
+<p>I get a number of hits to this page from a link in
+<a href="http://forums.cpanel.net/showthread.php?t=54858">this post</a> at the
+CPanel forums. The question is:</p>
+
+<blockquote>
+Due to spamming, spoofing from fields, etc., etc., etc., I am finding it
+necessary to spend more time to clear the exim queue from time to time.
+[...] what command would I use to delete the queue
+</blockquote>
+
+<p>The answer is: Just turn exim off, because your customers are better off
+knowing that email simply isn't running on your server, than having their
+queued messages deleted without notice.</p>
+
+<p>Or, figure out what is happening. The examples given in that post pay no
+regard to the legitimacy of any message, they simply delete everything,
+making the presumption that if a message is in the queue, it's junk. That
+is total fallacy.  There are a number of reasons legitimate mail can end up
+in the queue.  Maybe your backups or CPanel's "upcp" process are running,
+and your load average is high -- exim goes into a queue-only mode at a
+certain threshold, where it stops trying to deliver messages as they come
+in and just queues them until the load goes back down. Or, maybe it's an
+outgoing message, and the DNS lookup failed, or the connection to the
+domain's MX failed, or maybe the remote MX is busy or greylisting you with
+a 4xx deferral. These are all temporary failures, not permanent ones, and
+the whole point of having temporary failures in SMTP and a mail queue in
+your MTA is to be able to try again after awhile.</p>
+
+<p>Exim already purges messages from the queue after the period of time
+specified in exim.conf. If you have this value set appropriately, there is
+absolutely no point in removing everything from your queue every day with a
+cron job. <strong>You will lose legitimate mail, and the sender and
+recipient will never know if or why it happened.</strong> Do not do
+this!</p>
+
+<p>If you regularly have a large number of messages in your queue, find out
+why they are there. If they are outbound messages, see who is sending them,
+where they're addressed to, and why they aren't getting there.  If they are
+inbound messages, find out why they aren't getting delivered to your user's
+account. If you need to delete some, use exiqgrep to pick out just the ones
+that should be deleted.</p>
+
+
+<h3>Reload the configuration</h3>
+
+<p>After making changes to exim.conf, you need to give the main exim pid a
+SIGHUP to re-exec it and have the configuration re-read. Sure, you could
+stop and start the service, but that's overkill and causes a few seconds of
+unnecessary downtime. Just do this:</p>
+
+<pre class="shell"><b>root@localhost#</b> kill -HUP `cat /var/spool/exim/exim-daemon.pid`
+</pre>
+
+<p>You should then see something resembling the following in exim_mainlog:</p>
+
+<pre class="code">pid 1079: SIGHUP received: re-exec daemon
+exim 4.52 daemon started: pid=1079, -q1h, listening for SMTP on port 25 (IPv4)
+</pre>
+
+
+<h3>Read The Fucking Manual</h3>
+
+<p><a href="http://www.exim.org/">The Exim Home Page</a></p>
+
+<p><a href="http://www.exim.org/docs.html">Documentation For Exim</a></p>
+
+<p><a href="http://www.exim.org/exim-html-4.50/doc/html/spec.html">The Exim
+Specification - Version 4.5x</a></p>
+
+<p><a href="http://www.exim.org/exim-html-4.50/doc/html/spec_5.html#IX199">Exim
+command line arguments</a></p>
+
+
+<h3>Any questions?</h3>
+
+<p>Well, don't ask me! I'm one guy, with just enough time and Exim skills
+to keep my own stuff running okay.  There are several (perhaps even
+dozens) of people on the Internet who know way more than me, and who are
+willing to help out random strangers. Check into the
+<a href="http://lists.exim.org/lurker/list/exim-users.html">Exim users
+mailing list</a>, or one of the many web-based gateways to that list. And
+good luck.</p>
+
+
+<h3><a href="http://bradthemad.org/tech/notes/">More notes</a></h3>
+
+<!-- bottom -->
+</div><!-- end class main --><div class="nav">
+ <a href="http://bradthemad.org/"> Home</a>
+ <a href="http://bradthemad.org/pics/"> Pics</a>
+ <a href="http://bradthemad.org/journal/"> Journal</a>
+ <a href="http://bradthemad.org/personal/"> Personal</a>
+ <a href="http://bradthemad.org/guitar/"> Guitar</a>
+ <a href="http://bradthemad.org/tech/"> Technical</a>
+ <a href="http://bradthemad.org/contact.php"> Contact</a>
+</div></div><!-- end class block -->
+
+<p id="footer">
+  <a href="http://bradthemad.org/about.php#copyright">Copyright</a> ©1998-2013 by Brad The Mad, all rights reserved<br>
+
+Redistribution in any form considered harmful<br>
+</p>
+
+
+
+<!-- end bottom -->
+</body></html>

@@ -1,0 +1,341 @@
+/*
+ * StyleSheet for personal webpage on linmiri.ath.cx.
+ *
+ * $Id: linmiri.css,v 1.19 2002/12/12 21:04:41 brad Exp brad $
+ */
+
+/*
+ * Elements used on every page:
+ */
+
+/* margin: (all|top right bottom left|top/bottom left/right); */
+
+body {
+    /* Previous background colors: #3b3d52 #3355cc #3b3d62  #3b3d70 */
+    /* background: #303070; */
+    background: #333333;
+    color: #c5ccfa;
+}
+
+a:link {
+    background: transparent;
+    /* color: #88bbff; */
+    color: #88ff33;
+}
+a:visited {
+    background: transparent;
+    /* color: #4477aa; */
+    color: #229911;
+}
+a:hover {
+    color: #ffffff;
+    /* background: #3355cc; */
+    background: #229911;
+}
+
+h1 {
+    background: transparent;
+    color: #99ff99;
+    text-align: left;
+    margin: 5% 4% 2% 4%;
+    padding-top: 2%;
+    font-weight: bold;
+    font-family: Courier New, Courier, monospace;
+}
+
+h2 {
+    color: #99ff99;
+    text-align: left;
+    margin: 4% 4% 2% 6%;
+    font-weight: bold;
+    font-family: Courier New, Courier, monospace;
+}
+
+h3 {
+    color: #99ff99;
+    background: transparent;
+    font-weight: bold;
+    font-size: small;
+    margin: 2% 8% 0% 8%;
+}
+
+p {
+    background: transparent;
+    /* margin: 0% 10% 3% 10%; */
+    margin: 2% 10% 0% 10%;
+    padding: 0;
+    /* border: thin solid blue; */
+}
+
+blockquote {
+    background: transparent;
+    font-style: oblique;
+    margin: 2% 15%;
+}
+
+blockquote em {
+    /* Reverse-emphasis from above usual oblique blockquote style */
+    font-style: normal;
+}
+
+li {
+    background: transparent;
+    margin: 0% 15% 2% 15%;
+}
+
+dt {
+    background: transparent;
+    margin: 0% 10% 0% 10%;
+}
+
+dd {
+    background: transparent;
+    margin: 0% 15% 2% 15%;
+}
+
+pre {
+    background: transparent;
+    /* color: #00ff00; */
+    font-family: monospace;
+    /* margin: 3% 10% 1% 10%; */
+    margin: 1% 10% 3% 12%;
+    font-size: medium;
+    padding: 0;
+    /* border: thin solid white; */
+}
+
+/*
+ * This <div> is the big black box that holds everything:
+ */
+div.block {
+    background: #000000;
+    /* color: #c5ccfa; */
+    /* color: #eeeecc; */
+    color: #ddf0cc;
+    margin: 3% 11%;
+    clear: both;
+}
+
+/*
+ * The nav class is used in the nav bar at the top and bottom of every page:
+ */
+div.nav {
+    background: #000000;
+    color: #dddddd;
+    text-align: center;
+    margin: 2% 0% 2% 0%;
+    /* border-top: thin solid #3b3d52;
+    border-bottom: thin solid #3b3d52; */
+     border-top: thin solid #333333;
+    border-bottom: thin solid #333333;
+    word-spacing: 2em; /* Why doesn't this affect hyperlinked text? */
+    clear: left;
+}
+.nav a:link {
+    text-decoration: none;
+}
+.nav a:visited {
+    text-decoration: none;
+}
+
+/*
+ * The main <div> holds the page content, everything between the top and
+ * bottom nav bars.
+ */
+#main { }
+
+/*
+ * The music class is used on my journal pages:
+ */
+p.music {
+    text-align: left;
+    font-weight: bold;
+    font-size: x-small;
+    margin-top: 0%;
+    margin-bottom: 4%;
+}
+
+/*
+ * The tn class is used on pages full of thumbnails:
+ */
+p.tn {
+    clear: left;
+}
+img.tn {
+    float: left;
+    margin-top: 2%;
+    margin-bottom: 3%;
+    margin-right: 3%;
+}
+
+/*
+ * The webcam class is used to display webcam images
+ */
+img.webcam {
+    margin-left: 10%;
+    margin-top: 3%;
+    margin-bottom: 3%;
+}
+
+/*
+ * The comments class is used in my journal pages:
+ */
+p.comments {
+    text-align: right;
+    font-size: x-small;
+    margin-top: 0%;
+}
+
+/*
+ * The frontimg class is used for images displayed on the front page
+ */
+p.frontimg {
+    font-size: x-small;
+    text-align: center;
+    float: right;
+    margin-left: 3%;
+    margin-top: 3%;
+}
+img.frontimg {
+    margin: 0;
+    padding: 0;
+    border: thin solid #99ff99;
+}
+
+/*
+ * For the xmms-fed "Now Playing" blurb at the top of the homepage.
+ * This is a class because it gets used in two <p>'s on the homepage.
+ * It's two <p>'s and not one so that you get the border-bottom working
+ * as a little divider between the two.
+ */
+.nowplay {
+    background: transparent;
+    color: #c5ccfa;
+    font-size: x-small;
+    margin: 0% 10% 0% 50%;
+    padding: 0% 1%;
+    border-bottom: thin solid #000000;
+}
+
+.statbox {
+    background: #666666;
+    color: #ffffff;
+    font-size: x-small;
+    margin: 0% 10% 0% 50%;
+    padding: 0% 1%;
+    border-bottom: thin solid #000000;
+}
+
+/*
+ * Style for fortunes:
+ */
+.fortune {
+    text-align: center;
+    font-size: x-small;
+    font-style: oblique;
+}
+
+/*
+ * For the copyright notice at the bottom of every page:
+ */
+#footer {
+    font-size: x-small;
+    text-align: center;
+    background: transparent;
+    /* color: #99ccff; */
+    color: #eeeecc;
+    margin: 2%;
+}
+#footer a:link {
+    text-decoration: none;
+}
+#footer a:visited {
+    text-decoration: none;
+}
+#footer a:hover {
+    text-decoration: underline;
+}
+
+/* For preformatted code posts */
+.code {
+    font-family: monospace;
+    color: #00aaff;
+}
+
+/* To represent shell commands */
+.shell {
+    font-family: monospace;
+    color: #00ff00;
+    border: 1px solid gray;
+}
+
+/* Album titles */
+.alb_title {
+    /* text-decoration: underline; */
+    font-style: italic;
+}
+
+
+
+/* 
+ * New journal styles
+ */
+
+/* Left column for menu */
+#journal_menu {
+    position: fixed;
+    /* position: absolute; */
+    width: 150px;
+    top: 140px;
+    left: 0;
+    margin: 0% 0% 0% 12%;
+    /* border: 1px solid gray; */
+    font-family: sans-serif;
+    padding: 15px;
+    /* color: #858cba; */
+}
+#journal_menu a:link, #journal_menu a:link img {
+    /* color: #c5ccfa; */
+    color: #88ff33;
+    border: 0;
+}
+/* Right column <div> for all item entries */
+#journal_entries {
+    /* position: absolute; */
+    margin: 0px 10px 20px 200px;
+    /* border: 1px solid red; */
+    /* width: 80%; */
+}
+/* The <div>s containing individual entries */
+.journal_entry {
+    /* border: 1px solid gray; */
+    margin-bottom: 5%;
+}
+/* class for <h3> holding journal entry dates */
+.journal_date {
+    /* color: #858cba; */
+    color: #99ff99;
+    text-align: right;
+    margin-bottom: 0%;
+    border-bottom: 1px solid #858cba;
+}
+/* class for <span> around journal entry times */
+.journal_time {
+    margin: 0% 4% 0% 6%;
+    font-weight: normal;
+    text-align: right;
+    /* color: #858cba; */
+    color: #99ff99;
+}
+.journal_permalink {
+}
+/* class for <div> containing individual journal comments */
+.journal_comment {
+    margin-left: 10%;
+    margin-bottom: 5%;
+}
+/* class for nested <div> containing a reply to a comment */
+.journal_comment_reply {
+    margin-left: 5%;
+}
+/* EOF */
